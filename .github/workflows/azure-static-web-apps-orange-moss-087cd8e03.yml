@@ -10,6 +10,11 @@ on:
       - main
 
 jobs:
+  # azure static web apps have a straightforward integration in github. Do we need terraform at all here?
+  # whats missing rn:
+  #   - create resource group in subscription if it does not exist yet
+  #     - creation of resource group in subscription and repository itself was done within vscode
+  #
   build_and_deploy_job:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
