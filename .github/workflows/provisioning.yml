@@ -29,6 +29,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Provision Infrastructure
     steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
       # to let tf do its magic we need to login with the az cli
       # pass necesary environment variables here
       # - name: Azure Login
