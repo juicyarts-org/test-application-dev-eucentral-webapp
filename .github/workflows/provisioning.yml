@@ -1,0 +1,95 @@
+name: Azure Static Web Apps CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - main
+
+# not sure how to handle environments yet
+# one benefit of static web apps is the built in environment logic on the azure platform which
+# potentially could make a subscription separation obsolete for the use case of frontends.
+# But this contradicts our usual subscription based separation of environmnets..
+# I assume for now that we have a structure like this
+# So we need to define when to deploy to which environment
+# * directoy
+#   * subscription-x / environment-x
+#     * resource-group-x
+#       * service-x
+#   * subscription-y / environment-y
+#     * resource-group-y
+#       * service-y
+jobs:
+  # provision infrastructure with terraform
+  setup_infrastructure:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    name: Provision Infrastructure
+    steps:
+      # to let tf do its magic we need to login with the az cli
+      # pass necesary environment variables here
+      # - name: Azure Login
+      #   uses: Azure/login@v1
+      - name: HashiCorp - Setup Terraform
+        uses: hashicorp/setup-terraform@v2.0.2
+      - name: Initialize tf
+        run: terraform -chdir=terraform init;
+      - name: Plan Infrastructure
+        # use state via backend tf backend configuration
+        # this will be provided by eppedorf/bootstrap afaik (move to provider.tf):
+        # backend "azurerm" {
+        #     resource_group_name  = "tfstate"
+        #     storage_account_name = "<storage_account_name>"
+        #     container_name       = "tfstate"
+        #     key                  = "terraform.tfstate"
+        # }
+        #   - https://learn.microsoft.com/en-us/azure/developer/terraform/store-state-in-azure-storage?tabs=azure-cli
+        run: terraform -chdir=terraform plan -out=tf.state.foo;
+      - name: Apply Infrastructure
+        run: terraform -chdir=terraform apply;
+
+  # deploy to infrastructure using azure action
+  # will create a preview environment if in any other branch but main
+  # otherwise will treat as deployment to production environment for this instance of static web app
+  build_and_deploy_job:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    name: Build and Deploy Job
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Build And Deploy
+        id: builddeploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          # eppendorf/bootstrap will not give us tokens but certain ids and secrets per environment
+          # this on the other hand seems to need a pretty specific token which was associated to
+          # the github repo when the connection was initalized. investigate if there's a way to get this
+          # kind of a token when terraform creates/recreates/refreshes the static web app resource
+          # since this token serves two purposes: authentication / Identification of the azure resource
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ORANGE_MOSS_087CD8E03 }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
+          action: 'upload'
+          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
+          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
+          app_location: '/' # App source code path
+          output_location: 'dist' # Built app content directory - optional
+          skip_api_build: true # we don't need the api
+          ###### End of Repository/Build Configurations ######
+
+  # deploy to infrastructure using azure action
+  close_pull_request_job:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    name: Close Pull Request Job
+    steps:
+      - name: Close Pull Request
+        id: closepullrequest
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ORANGE_MOSS_087CD8E03 }}
+          action: 'close'
