@@ -41,18 +41,33 @@ I will try to gather the actual costs we have currently from the azure portal bu
 
 #### Pro's
 
-* solution might be the cheapest way
+* cheap
 * "battle-tested", already in use in parts of more recent development on the eppendorf side
 
 #### Con's
 
-* developer experience
+* development experience
   * need to setup storage + cdn
 
 ### Option 2: Azure Static Web App
 
-This repository contains an example workflow that interacts with a static web app setup in azure. It's not fully configured and the initall setup was done "manually" by creating a static web app through azures static web app extension in vsocde. This created the base repository (you can also reuse an existing one) assigned it to a ressource group inside of a subscription, added necessary environment variables in github and added the necessary action to deploy. All of the stup took less than 5 minutes.
+This repository contains an example workflow that interacts with a static web app setup in azure. It's not fully configured and the initall setup was done "manually" by creating a static web app through azures static web app extension in vsocde. This created the base repository (you can also reuse an existing one) assigned it to a ressource group inside of a subscription, added necessary environment variables in github and added the necessary action to deploy. All of this took less than 5 minutes.
+
 You can see the running app here: <https://orange-moss-087cd8e03.2.azurestaticapps.net/>
+Here is a preview app built from a branch: <https://orange-moss-087cd8e03-1.westeurope.2.azurestaticapps.net/> . Closing a pull request removes this preview app.
+
+> i think this was the best experience setting up a stupid spa i ever had since i worked with heroku yeears ago
+
+#### Pro's
+
+* [easy initial setup](https://learn.microsoft.com/en-gb/azure/static-web-apps/getting-started?tabs=vanilla-javascript)
+* [preview environments](https://learn.microsoft.com/en-gb/azure/static-web-apps/preview-environments)
+  * named environments
+*
+
+#### Con's
+
+* preview environments are insecure
 
 ## Open questions
 
